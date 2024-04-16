@@ -7,7 +7,10 @@ metadata:
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace | quote }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
+  loadBalancerClass: {{ .Values.service.class }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  externalTrafficPolicy: Local
   ports:
   - name: tftp
     port: 69
@@ -26,4 +29,6 @@ spec:
     targetPort: 67
     protocol: UDP
   selector:
-    app: {{ .Values.name }}
+    {{- with .Values.selector }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}

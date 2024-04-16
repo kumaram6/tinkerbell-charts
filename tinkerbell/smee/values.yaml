@@ -126,3 +126,17 @@ additionalArgs: []
 #   - name: MY_ENV_VAR
 #     value: my-value
 additionalEnv: []
+
+
+trustedProxies: []
+
+
+service:
+  enabled: true
+  type: LoadBalancer
+  class: kube-vip.io/kube-vip-class
+  loadBalancerIP: ""
+
+selector:
+    app: smee
+

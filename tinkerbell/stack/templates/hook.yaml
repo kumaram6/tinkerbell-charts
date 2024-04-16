@@ -9,6 +9,8 @@ data:
   entrypoint.sh: |-
     #!/usr/bin/env bash
     # This script is designed to download the Hook artifacts.
+    apt-get update
+    apt-get install -y wget
     set -euxo pipefail
     cd /output
     rm -f *.tar.gz checksum.txt vmlinuz* initramfs*
@@ -40,6 +42,19 @@ spec:
         - name: download-hook
           image: {{ .Values.stack.hook.image }}
           command: ["/script/entrypoint.sh"]
+          env:
+            - name: http_proxy
+              value: http://proxy-dmz.intel.com:911
+            - name: https_proxy
+              value: http://proxy-dmz.intel.com:912
+            - name: no_proxy
+              value: localhost,127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,.svc.cluster.local,cdi-api,localhost,virt-api,*.intel.com,*intel.com,/var/run/docker.sock,/run/containerd/containerd.sock,172.22.32.0/22,172.22.33.51,172.22.33.237  
+            - name: HTTP_PROXY 
+              value: http://proxy-dmz.intel.com:911 
+            - name: HTTPS_PROXY 
+              value: http://proxy-dmz.intel.com:912
+            - name: NO_PROXY 
+              value: localhost,127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,.svc.cluster.local,cdi-api,localhost,virt-api,*.intel.com,*intel.com,/var/run/docker.sock,/run/containerd/containerd.sock,172.22.32.0/22,172.22.33.51,172.22.33.237
           volumeMounts:
             - mountPath: /output
               name: hook-artifacts

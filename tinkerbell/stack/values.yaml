@@ -8,7 +8,7 @@ stack:
     app: tink-stack
   # &publicIP is a YAML anchor. It allows us to define a value once and reference it multiple times.
   # https://helm.sh/docs/chart_template_guide/yaml_techniques/#yaml-anchors
-  loadBalancerIP: &publicIP 192.168.2.112
+  loadBalancerIP: &publicIP 172.22.32.200
   lbClass: kube-vip.io/kube-vip-class
   # Once the Kubernetes Gateway API is more stable, we will use that for all services instead of nginx.
   image: nginx:1.25.1
@@ -16,7 +16,7 @@ stack:
     enabled: true
     name: hook-files
     port: 8080
-    image: bash
+    image: ubuntu:22.04
     downloadsDest: /opt/hook
     # downloadURL only works with the > 0.8.1 Hook release because
     # previous Hook versions didn't provide a checksum file.
@@ -33,7 +33,7 @@ stack:
   # Relay allows us to listen and respond to layer broadcast DHCP requests
   relay:
     name: dhcp-relay
-    enabled: true
+    enabled: false
     # This image (ghcr.io/jacobweinstock/dhcrelay) is used because the other public dhcprelay images out there (`modem7/dhcprelay`)
     # don't respect signals properly when run as PID 1.
     image: ghcr.io/jacobweinstock/dhcrelay
@@ -52,8 +52,35 @@ stack:
 smee:
   image: quay.io/tinkerbell/smee:v0.11.0
   tinkWorkerImage: quay.io/tinkerbell/tink-worker:v0.10.0
-  trustedProxies: []
+  trustedProxies: [10.42.0.0/24]
   publicIP: *publicIP
+  additionlKernelArgs: &kernelArgs
+    - "http_proxy=http://proxy-dmz.intel.com:911"
+    - "https_proxy=http://proxy-dmz.intel.com:912"
+    - "no_proxy=localhost,127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,.svc.cluster.local,cdi-api,localhost,virt-api,*.intel.com,*intel.com,/var/run/docker.sock,/run/containerd/containerd.sock,172.22.32.0/22,172.22.33.51,172.22.33.237"
+    - "HTTP_PROXY=http://proxy-dmz.intel.com:911"
+    - "HTTPS_PROXY=http://proxy-dmz.intel.com:912"
+    - "NO_PROXY=localhost,127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,.svc.cluster.local,cdi-api,localhost,virt-api,*.intel.com,*intel.com,/var/run/docker.sock,/run/containerd/containerd.sock,172.22.32.0/22,172.22.33.51,172.22.33.237"
+    - "load_balancer=172.22.32.200"
+  service:
+    enabled: true
+    type: LoadBalancer
+    class: kube-vip.io/kube-vip-class
+    loadBalancerIP: *publicIP
+  selector:
+    app: smee
+  http:
+    # Tink Server configuration passed to the Tink Worker to establish a gRPC connection.
+    tinkServer:
+      ip: *publicIP
+      port: 42113
+      tls: false
+    osieUrl:
+      scheme: "http"
+      host: *publicIP
+      port: 8080
+      path: ""
+    additionlKernelArgs: *kernelArgs
 
 hegel:
   image: quay.io/tinkerbell/hegel:v0.12.0
