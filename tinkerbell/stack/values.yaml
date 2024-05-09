@@ -8,21 +8,23 @@ stack:
     app: tink-stack
   # &publicIP is a YAML anchor. It allows us to define a value once and reference it multiple times.
   # https://helm.sh/docs/chart_template_guide/yaml_techniques/#yaml-anchors
-  loadBalancerIP: &publicIP 192.168.2.112
+  loadBalancerIP: &publicIP 192.168.1.112
   lbClass: kube-vip.io/kube-vip-class
   # Once the Kubernetes Gateway API is more stable, we will use that for all services instead of nginx.
   image: nginx:1.25.1
   hook:
     enabled: true
     name: hook-files
-    port: 8080
+    port: 80
     image: bash
     downloadsDest: /opt/hook
     # downloadURL only works with the > 0.8.1 Hook release because
     # previous Hook versions didn't provide a checksum file.
     downloadURL: https://github.com/tinkerbell/hook/releases/download/latest
+    download:
+      enabled: false
   kubevip:
-    enabled: true
+    enabled: false
     name: kube-vip
     image: ghcr.io/kube-vip/kube-vip:v0.6.3
     imagePullPolicy: IfNotPresent
@@ -40,7 +42,7 @@ stack:
     maxHopCount: 10
     # sourceInterface is the Host/Node interface to use for listening for DHCP broadcast packets.
     # When unset, the interface from the default route will be used.
-    # sourceInterface: eno1
+    sourceInterface: enp0s31f6
     # TODO(jacobweinstock): add feature to be able to disable listening for broadcast traffic.
 
 # -- Overrides
